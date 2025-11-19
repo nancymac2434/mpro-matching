@@ -8,12 +8,11 @@ class Salem_Matching extends Matching_Base {
 
 	//private $client_id;
 
-	public function __construct($client_id = '') {
+	public function __construct( string $client_id = '' ) {
 		$this->client_id = $client_id;
-		//error_log('(in class-salem) client ID is ' . $client_id);
 	}
-	
-	public function get_report_fields() {
+
+	public function get_report_fields(): array {
 		return [
 			'mpro_ssu_id' => 'SSU ID',
 			'post_date' => 'Date Created',
@@ -34,8 +33,9 @@ class Salem_Matching extends Matching_Base {
 		];
 	}
 
-	
-	public function get_all_trait_settings() {
+
+
+	public function get_all_trait_settings(): array {
 		return [
 			'Similar career interests' => [
 				'cap' => 6.5,
@@ -87,7 +87,7 @@ class Salem_Matching extends Matching_Base {
 		];
 	}
 
-	public function generate_matching_report() {
+	public function generate_matching_report(): array {
 		global $wpdb;
 
 		// 1️⃣ Get all mentees for a specific assigned client
@@ -95,10 +95,10 @@ class Salem_Matching extends Matching_Base {
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
 				FROM {$wpdb->posts} p
-				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = '1'
+				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
-			", $this->client_id)
+			", MPRO_ROLE_MENTEE, $this->client_id)
 		);
 
 		// 2️⃣ Get all mentors for a specific assigned client
@@ -106,10 +106,10 @@ class Salem_Matching extends Matching_Base {
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
 				FROM {$wpdb->posts} p
-				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = '2'
+				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
-			", $this->client_id)
+			", MPRO_ROLE_MENTOR, $this->client_id)
 		);
 		
 		$mentor_match_count = []; 
@@ -463,9 +463,12 @@ class Salem_Matching extends Matching_Base {
 		return $score;
 	}
 	
-	public function compare_top_3($mentor_input, $mentee_input, $trait = '') {
-		// For ranking-type fields that may have embedded commas in values
-		
+	public function compare_top_3( $mentor_input, $mentee_input, string $trait = '' ): array {
+		// Validate inputs
+		if (empty($mentor_input) || empty($mentee_input)) {
+			return ['score' => 0, 'matches' => []];
+		}
+
 		$valid_options = [];
 		if (is_array($mentor_input)) {
 			$mentor = $mentor_input;
@@ -506,7 +509,7 @@ class Salem_Matching extends Matching_Base {
 		];
 	}
 
-public function score_top3_trait_match( $trait_label, $mentor_pref_raw, $mentee_pref_raw, $mentor_input, $mentee_input ) {
+public function score_top3_trait_match( string $trait_label, string $mentor_pref_raw, string $mentee_pref_raw, $mentor_input, $mentee_input ): array {
 
 		// Step 1: Compare top 3 responses
 		$comparison = $this->compare_top_3( $mentor_input, $mentee_input, $trait_label );

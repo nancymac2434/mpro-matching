@@ -1,16 +1,17 @@
 <?php
 class Matching_Base {
 	protected $client_id;
+	protected $total_max_score = null; // Cache for expensive calculation
 
-	public function __construct( $client_id = '' ) {
+	public function __construct( string $client_id = '' ) {
 		$this->client_id = $client_id;
 	}
 
-	public function get_all_trait_settings() {
+	public function get_all_trait_settings(): array {
 		return []; // default empty — must override in child
 	}
-	
-	public function get_trait_settings($trait_label) {
+
+	public function get_trait_settings( string $trait_label ): array {
 		$all = $this->get_all_trait_settings();
 		return $all[$trait_label] ?? [
 			'cap' => 5,
@@ -20,22 +21,27 @@ class Matching_Base {
 			'bonus_eligible' => true,
 		];
 	}
-	
-	public function get_total_max_score() {
-		$settings = $this->get_all_trait_settings(); 
-	
+
+	public function get_total_max_score(): float {
+		// Return cached value if available
+		if ( $this->total_max_score !== null ) {
+			return $this->total_max_score;
+		}
+
+		$settings = $this->get_all_trait_settings();
 		$total = 0;
-	
+
 		foreach ( $settings as $trait ) {
 			$total += $trait['cap'];
 		}
-		
-		$total = $total;
-	
+
+		// Cache the result
+		$this->total_max_score = $total;
+
 		return $total;
 	}
-	
-	public function get_report_fields() {
+
+	public function get_report_fields(): array {
 		return [ // default is using Leap4Ed now
 		'post_date' => 'Date Created',
 		'mpro_role' => 'Role',

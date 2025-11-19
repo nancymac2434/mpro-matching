@@ -13,28 +13,37 @@ class MPro_Display {
 		$atts = shortcode_atts( array(
 			'client_id' => 'mentorpro', // Default client ID if not provided.
 		), $atts, 'mentor_matches' );
-	
-		$client_id = $atts['client_id'];
-	
-// Determine and load the appropriate matching class
-$matching = null;
 
-switch ( $client_id ) {
-	case 'leap4ed-chp':
-		require_once plugin_dir_path( __FILE__ ) . 'class-leap4ed-matching.php';
-		$matching = new Leap4Ed_Matching( $client_id );
-		break;
+		// Sanitize and validate client ID
+		$client_id = sanitize_key( $atts['client_id'] );
+		$valid_clients = array( 'leap4ed-chp', 'salem', 'mentorpro' );
 
-	case 'salem':
-		require_once plugin_dir_path( __FILE__ ) . 'class-salem-matching.php';
-		$matching = new Salem_Matching( $client_id );
-		break;
+		if ( ! in_array( $client_id, $valid_clients, true ) ) {
+			error_log( "MPro Matching: Invalid client ID attempted: " . esc_html( $atts['client_id'] ) );
+			return "<p>Invalid client ID. Please contact the administrator.</p>";
+		}
 
-	default:
-		require_once plugin_dir_path( __FILE__ ) . 'class-matching-base.php';
-		// Optionally fall back to a base class or log an error
-		return "<p>Unknown client ID: $client_id</p>";
-}
+		// Determine and load the appropriate matching class
+		$matching = null;
+
+		switch ( $client_id ) {
+			case 'leap4ed-chp':
+				require_once plugin_dir_path( __FILE__ ) . 'class-leap4ed-matching.php';
+				$matching = new Leap4Ed_Matching( $client_id );
+				break;
+
+			case 'salem':
+				require_once plugin_dir_path( __FILE__ ) . 'class-salem-matching.php';
+				$matching = new Salem_Matching( $client_id );
+				break;
+
+			case 'mentorpro':
+			default:
+				require_once plugin_dir_path( __FILE__ ) . 'class-matching-base.php';
+				// Fall back to base class for mentorpro
+				$matching = new Matching_Base( $client_id );
+				break;
+		}
 
 // Call the matching algorithm
 $result = $matching->generate_matching_report();

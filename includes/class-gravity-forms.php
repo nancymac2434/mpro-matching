@@ -176,13 +176,27 @@ class Leap4Ed_GravityForms {
 		]);
 		
 		$address = implode("\n", $address_parts);
-						
+
 		// Store as a new post
 		$post_id = wp_insert_post([
 			'post_type'   => 'mentor_submission',
 			'post_status' => 'publish',
 			'post_title'  => $fname . ' ' . $lname, // Use full name as title
 		]);
+
+		// Check for errors
+		if (is_wp_error($post_id)) {
+			error_log("MPro Matching: Failed to create mentor_submission: " . $post_id->get_error_message());
+			error_log("MPro Matching: Entry ID: " . $entry['id']);
+			return;
+		}
+
+		if (!$post_id || $post_id === 0) {
+			error_log("MPro Matching: wp_insert_post returned 0 for entry {$entry['id']}");
+			return;
+		}
+
+		// Post created successfully, continue with meta updates
 		if ($post_id) {
 			
 		// Extract survey data

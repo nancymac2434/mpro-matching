@@ -274,24 +274,24 @@ function rebalance_matches(&$matches, $all_mentor_names) {
 		 SELECT COUNT(*)
 		 FROM {$wpdb->posts} p
 		 INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id
-			 AND r.meta_key = 'mpro_role' AND r.meta_value = '2'
+			 AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 		 INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id
 			 AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 		 WHERE p.post_type = 'mentor_submission'
 		   AND p.post_status = 'publish'
-	 ", $client_id ) );
- 
+	 ", MPRO_ROLE_MENTOR, $client_id ) );
+
 	 // Count mentees
 	 $mentees = $wpdb->get_var( $wpdb->prepare("
 		 SELECT COUNT(*)
 		 FROM {$wpdb->posts} p
 		 INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id
-			 AND r.meta_key = 'mpro_role' AND r.meta_value = '1'
+			 AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 		 INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id
 			 AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 		 WHERE p.post_type = 'mentor_submission'
 		   AND p.post_status = 'publish'
-	 ", $client_id ) );
+	 ", MPRO_ROLE_MENTEE, $client_id ) );
  
 	 return [
 		 'mentors' => intval( $mentors ),
@@ -348,17 +348,33 @@ if (!function_exists('mpro_download_matches_csv')) {
 		$out = fopen('php://output', 'w');
 		if ($out === false) wp_die('Unable to open output stream.');
 
-		// CSV header row
-		fputcsv($out, ['Mentee', 'Mentor', 'Score (%)', 'Matched Fields']);
+		// CSV header row - filterable
+		$columns = apply_filters('mpro_matches_csv_columns', [
+			'Mentee', 'Mentor', 'Score (%)', 'Matched Fields'
+		], $client_id);
 
-		// CSV data rows
+		fputcsv($out, $columns);
+
+		// CSV data rows - filterable
 		foreach ($matches as $m) {
-			fputcsv($out, [
-				$m['mentee']     ?? '',
-				$m['mentor']     ?? '',
-				$m['percentage'] ?? '',
-				$m['field']      ?? '',
-			]);
+			// Default row data
+			$default_row = [
+				'Mentee'         => $m['mentee']     ?? '',
+				'Mentor'         => $m['mentor']     ?? '',
+				'Score (%)'      => $m['percentage'] ?? '',
+				'Matched Fields' => $m['field']      ?? '',
+			];
+
+			// Allow filtering of row data
+			$row = apply_filters('mpro_matches_csv_row', $default_row, $m, $client_id);
+
+			// Ensure row values are in the same order as headers
+			$row_values = [];
+			foreach ($columns as $col) {
+				$row_values[] = $row[$col] ?? '';
+			}
+
+			fputcsv($out, $row_values);
 		}
 
 		fclose($out);

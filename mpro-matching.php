@@ -13,6 +13,10 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 define('MPRO_MATCHING_PATH', plugin_dir_path(__FILE__));
 define('MPRO_MATCHING_URL', plugin_dir_url(__FILE__));
 
+// Role constants
+define('MPRO_ROLE_MENTEE', '1');
+define('MPRO_ROLE_MENTOR', '2');
+
 // Include necessary files
 require_once MPRO_MATCHING_PATH . 'includes/class-matching-functions.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-gravity-forms.php';
@@ -28,29 +32,23 @@ require_once MPRO_MATCHING_PATH . 'includes/class-matching-base.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-leap4ed-matching.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-salem-matching.php';
 
-add_action('gform_after_submission_12', function($entry, $form) {
-	$handler = new Leap4Ed_GravityForms(); // ✅ create an instance
-	$handler->save_survey_data($entry, $form); // ✅ call instance method
-}, 10, 2);
+// Consolidated form submission handler
+function mpro_handle_form_submission($entry, $form) {
+	$client_id = get_client_id_for_form($form['id']);
 
-add_action('gform_after_submission_14', function($entry, $form) {
-	$handler = new MPro_GravityForms_Handler(); // ✅ create an instance
-	$handler->mpro_save_survey_data($entry, $form); // ✅ call instance method
-}, 10, 2);
-add_action('gform_after_submission_15', function($entry, $form) {
-	$handler = new MPro_GravityForms_Handler(); // ✅ create an instance
-	$handler->mpro_save_survey_data($entry, $form); // ✅ call instance method
-}, 10, 2);
+	if (!$client_id) {
+		error_log("MPro Matching: Unknown form ID: {$form['id']}");
+		return;
+	}
 
+	$handler = new Leap4Ed_GravityForms();
+	$handler->save_survey_data($entry, $form);
+}
 
+add_action('gform_after_submission_12', 'mpro_handle_form_submission', 10, 2);
+add_action('gform_after_submission_14', 'mpro_handle_form_submission', 10, 2);
+add_action('gform_after_submission_15', 'mpro_handle_form_submission', 10, 2);
 
-// Initialize plugin
-//function leap4ed_matching_init() {
-//	new Leap4Ed_GravityForms();
-//	new MPro_GravityForms_Handler();
-//	new Leap4Ed_Display(); 
-//}
-//add_action('plugins_loaded', 'leap4ed_matching_init');
 // Initialize plugin
 function mpro_matching_init() {
 	new Leap4Ed_GravityForms();        // This handles form 12, keep name for legacy compatibility
