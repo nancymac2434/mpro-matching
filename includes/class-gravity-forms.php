@@ -136,6 +136,7 @@ function get_client_id_for_form($form_id) {
 	$form_map = [
 		12 => 'leap4ed-chp',
 		15 => 'salem',
+		18 => 'coffee',
 		14 => 'vt',
 		11 => 'mentorpro',
 	];

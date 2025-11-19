@@ -31,6 +31,7 @@ require_once MPRO_MATCHING_PATH . 'includes/matching-schemas.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-matching-base.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-leap4ed-matching.php';
 require_once MPRO_MATCHING_PATH . 'includes/class-salem-matching.php';
+require_once MPRO_MATCHING_PATH . 'includes/class-coffee-matching.php';
 
 // Consolidated form submission handler
 function mpro_handle_form_submission($entry, $form) {
@@ -48,6 +49,7 @@ function mpro_handle_form_submission($entry, $form) {
 add_action('gform_after_submission_12', 'mpro_handle_form_submission', 10, 2);
 add_action('gform_after_submission_14', 'mpro_handle_form_submission', 10, 2);
 add_action('gform_after_submission_15', 'mpro_handle_form_submission', 10, 2);
+add_action('gform_after_submission_18', 'mpro_handle_form_submission', 10, 2);
 
 // Initialize plugin
 function mpro_matching_init() {
@@ -132,8 +134,44 @@ add_action('admin_menu', function() {
 			exit;
 		}
 	);
-		
-	add_submenu_page( 
+
+	add_submenu_page(
+		'magic-matching',    // Parent Slug
+		'Coffee Application', // Page Title
+		'Coffee Application', // Menu Title
+		'manage_options',    // Capability
+		'coffee-matching-form', // Menu Slug
+		function() { // Redirect to frontend page
+			wp_redirect('/coffee-matching-form/');
+			exit;
+		}
+	);
+
+	add_submenu_page(
+		'magic-matching',    // Parent Slug
+		'Coffee Matching Report', // Page Title
+		'Coffee Matching Report', // Menu Title
+		'manage_options',    // Capability
+		'coffee-matching-report', // Menu Slug
+		function() { // Redirect to frontend page
+			wp_redirect('/coffee-matching-report/');
+			exit;
+		}
+	);
+
+	add_submenu_page(
+		'magic-matching',    // Parent Slug
+		'Coffee Data Report/Export', // Page Title
+		'Coffee Data Report/Export', // Menu Title
+		'manage_options',    // Capability
+		'coffee-data-report', // Menu Slug
+		function() { // Redirect to frontend page
+			wp_redirect('/coffee-data-report/');
+			exit;
+		}
+	);
+
+	add_submenu_page(
 		'magic-matching',  // Parent Slug
 		'Lynn CHP Application', // Page Title mentor_matches
 		'Lynn CHP Application', // Menu Title

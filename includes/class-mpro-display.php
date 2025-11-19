@@ -16,7 +16,7 @@ class MPro_Display {
 
 		// Sanitize and validate client ID
 		$client_id = sanitize_key( $atts['client_id'] );
-		$valid_clients = array( 'leap4ed-chp', 'salem', 'mentorpro' );
+		$valid_clients = array( 'leap4ed-chp', 'salem', 'coffee', 'mentorpro' );
 
 		if ( ! in_array( $client_id, $valid_clients, true ) ) {
 			error_log( "MPro Matching: Invalid client ID attempted: " . esc_html( $atts['client_id'] ) );
@@ -35,6 +35,11 @@ class MPro_Display {
 			case 'salem':
 				require_once plugin_dir_path( __FILE__ ) . 'class-salem-matching.php';
 				$matching = new Salem_Matching( $client_id );
+				break;
+
+			case 'coffee':
+				require_once plugin_dir_path( __FILE__ ) . 'class-coffee-matching.php';
+				$matching = new Coffee_Matching( $client_id );
 				break;
 
 			case 'mentorpro':
