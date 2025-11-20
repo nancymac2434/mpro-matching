@@ -17,7 +17,6 @@ class Leap4Ed_Matching extends Matching_Base {
 			'post_date' => 'Date Created',
 			'mpro_role' => 'Role',
 			'mpro_email' => 'Email',
-			'mpro_phone' => 'Phone',
 			'mpro_gender' => 'Gender',
 			'mpro_race' => 'Race',
 			'mpro_ed' => 'Education',

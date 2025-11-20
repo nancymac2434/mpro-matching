@@ -16,7 +16,6 @@ function get_matching_schema($client_id) {
 				'1.3' => ['meta_key' => 'mpro_fname'],
 				'1.6' => ['meta_key' => 'mpro_lname'],
 				'3'   => ['meta_key' => 'mpro_email'],
-				'2'   => ['meta_key' => 'mpro_phone'],
 				'97'  => ['meta_key' => 'mpro_role'],
 				'18'  => ['meta_key' => 'mpro_gender'],
 				// TIPI
@@ -70,7 +69,6 @@ function get_matching_schema($client_id) {
 					'1.3' => ['meta_key' => 'mpro_fname'],
 					'1.6' => ['meta_key' => 'mpro_lname'],
 					'3'   => ['meta_key' => 'mpro_email'],
-					'2'   => ['meta_key' => 'mpro_phone'],
 					'92'  => ['meta_key' => 'mpro_role'],
 					'18'  => ['meta_key' => 'mpro_gender'],
 					'44'  => ['meta_key' => 'mpro_age'],
@@ -103,38 +101,58 @@ function get_matching_schema($client_id) {
 				'single_meta_fields' => [
 					'mpro_years_worked', 'mpro_match_pref', 'mpro_seniority_level',
 					'mpro_mentor_skill_have', 'mpro_mentee_skill_want', 'mpro_leadership_compass',
-					'mpro_field_of_work',
+					'mpro_field_of_work', 'mpro_position_title', 'mpro_company_name',
+					'mpro_field_importance', 'mpro_alignment_preference', 'mpro_brief_bio',
 				],
 				'multi_meta_fields' => [
-					'mpro_strengths', 'mpro_goals', 'mpro_soft_skills'
+					'mpro_strengths', 'mpro_mentor_goals_have', 'mpro_mentee_goals_want',
+					'mpro_mentor_soft_skills_have', 'mpro_mentee_soft_skills_want'
 				],
 				'field_map' => [
 					'1.3' => ['meta_key' => 'mpro_fname'],
 					'1.6' => ['meta_key' => 'mpro_lname'],
 					'3'   => ['meta_key' => 'mpro_email'],
-					'2'   => ['meta_key' => 'mpro_phone'],
 					'92'  => ['meta_key' => 'mpro_role'],
 					'73'  => ['meta_key' => 'mpro_seniority_level'],
-					'37'  => ['meta_key' => 'mpro_years_worked'],
+					'107' => ['meta_key' => 'mpro_years_worked'],
 					'94'  => ['meta_key' => 'mpro_match_pref'],
 					'85'  => ['meta_key' => 'mpro_mentor_skill_have'],
 					'83'  => ['meta_key' => 'mpro_mentee_skill_want'],
 					'36'  => ['meta_key' => 'mpro_strengths'],
-					'96'  => ['meta_key' => 'mpro_goals'],
-					'97'  => ['meta_key' => 'mpro_soft_skills'],
+					'96'  => ['meta_key' => 'mpro_mentee_goals_want'],
+					'103' => ['meta_key' => 'mpro_mentor_goals_have'],
+					'97'  => ['meta_key' => 'mpro_mentee_soft_skills_want'],
+					'104' => ['meta_key' => 'mpro_mentor_soft_skills_have'],
 					'98'  => ['meta_key' => 'mpro_leadership_compass'],
 					'99'  => ['meta_key' => 'mpro_field_of_work'],
+					'101' => ['meta_key' => 'mpro_position_title'],
+					'102' => ['meta_key' => 'mpro_company_name'],
+					'105' => ['meta_key' => 'mpro_field_importance'],
+					'106' => ['meta_key' => 'mpro_alignment_preference'],
+					'108' => ['meta_key' => 'mpro_brief_bio'],
 				],
 
 				'multi_selects' => [
 					'mpro_strengths' => '36',
-					'mpro_goals' => '96',
-					'mpro_soft_skills' => '97',
+					'mpro_mentee_goals_want' => '96',
+					'mpro_mentor_goals_have' => '103',
+					'mpro_mentee_soft_skills_want' => '97',
+					'mpro_mentor_soft_skills_have' => '104',
 				],
 
 				'skills_match' => [
 					'mpro_mentor_skill_have' => '85',
 					'mpro_mentee_skill_want' => '83',
+				],
+
+				'goals_match' => [
+					'mpro_mentor_goals_have' => '103',
+					'mpro_mentee_goals_want' => '96',
+				],
+
+				'soft_skills_match' => [
+					'mpro_mentor_soft_skills_have' => '104',
+					'mpro_mentee_soft_skills_want' => '97',
 				],
 
 				'match_bonus_fields' => [
@@ -156,7 +174,6 @@ function get_matching_schema($client_id) {
 				'1.3' => ['meta_key' => 'mpro_fname'],
 				'1.6' => ['meta_key' => 'mpro_lname'],
 				'3'   => ['meta_key' => 'mpro_email'],
-				'2'   => ['meta_key' => 'mpro_phone'],
 				'97'  => ['meta_key' => 'mpro_role'],
 				'18'  => ['meta_key' => 'mpro_gender'],
 				// TIPI
@@ -203,7 +220,6 @@ function get_matching_schema($client_id) {
 						'1.3' => ['meta_key' => 'mpro_fname'],
 						'1.6' => ['meta_key' => 'mpro_lname'],
 						'3'   => ['meta_key' => 'mpro_email'],
-						'2'   => ['meta_key' => 'mpro_phone'],
 						'92'  => ['meta_key' => 'mpro_role'],
 						'18'  => ['meta_key' => 'mpro_gender'],
 						'33'  => ['meta_key' => 'mpro_zip'],

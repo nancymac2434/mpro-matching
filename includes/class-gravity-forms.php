@@ -205,7 +205,6 @@ class Leap4Ed_GravityForms {
 
 		// Extract survey data
 		$email = rgar($entry, '3');
-		$phone = rgar($entry, '2');
 
 		// Get role field ID from schema (different forms use different field IDs)
 		$role_field_id = '97'; // default for leap4ed-chp
@@ -287,7 +286,12 @@ class Leap4Ed_GravityForms {
 		$late_response = rgar($entry, '108');
 		$dream_job = rgar($entry, '131');
 		$preference_to_meet = rgar($entry, '132');
-		
+		$position_title = rgar($entry, '101');
+		$company_name = rgar($entry, '102');
+		$field_importance = rgar($entry, '105');
+		$alignment_preference = rgar($entry, '106');
+		$brief_bio = rgar($entry, '108');
+
 		//mentee only
 		if ($client_id === 'leap4ed-chp') {
 			$mentee_career_want =  rgar($entry, '127'); // dragging field, matches with mentor_career_have
@@ -327,19 +331,31 @@ class Leap4Ed_GravityForms {
 
 		// Define all multi-select fields
 		if ($client_id === 'leap4ed-chp') {
-			$multi_select_fields = [ 
-				'mpro_languages' => '125', 
+			$multi_select_fields = [
+				'mpro_languages' => '125',
 				'mpro_interests' => '36',
-				'mpro_family_origin' => '45'			
+				'mpro_family_origin' => '45'
 			];
+		} elseif ($client_id === 'coffee') {
+			$multi_select_fields = [
+				'mpro_strengths' => '36',
+			];
+			// Add goals and soft skills fields based on role
+			if ($role === 'mentee') {
+				$multi_select_fields['mpro_mentee_goals_want'] = '96';
+				$multi_select_fields['mpro_mentee_soft_skills_want'] = '97';
+			} else {
+				$multi_select_fields['mpro_mentor_goals_have'] = '103';
+				$multi_select_fields['mpro_mentor_soft_skills_have'] = '104';
+			}
 		} else {
-			$multi_select_fields = [ 
-				'mpro_languages' => '35', 
+			$multi_select_fields = [
+				'mpro_languages' => '35',
 				'mpro_interests' => '36',
-				'mpro_family_origin' => '45'			
+				'mpro_family_origin' => '45'
 			];
 		}
-		
+
 		$multi_select_data = [];
 
 		// Loop through the fields and extract data dynamically
@@ -357,7 +373,6 @@ class Leap4Ed_GravityForms {
 			update_post_meta($post_id, 'mpro_fname', $fname);
 			update_post_meta($post_id, 'mpro_lname', $lname);
 			update_post_meta($post_id, 'mpro_email', $email);
-			update_post_meta($post_id, 'mpro_phone', $phone);
 			update_post_meta($post_id, 'mpro_role', $role_numeric); // Store numeric value: 1 = mentee, 2 = mentor
 			update_post_meta($post_id, 'mpro_gender', $gender);
 			update_post_meta($post_id, 'mpro_age', $age);
@@ -385,9 +400,14 @@ class Leap4Ed_GravityForms {
 			update_post_meta($post_id, 'mpro_mentor_skills_have', $mentor_skills_have);
 			update_post_meta($post_id, 'mpro_mentee_skills_want', $mentee_skills_want);			
 			
-			update_post_meta($post_id, 'mpro_mentor_late_response', $late_response);			
-			update_post_meta($post_id, 'mpro_mentee_dream_job', $dream_job);			
-			update_post_meta($post_id, 'mpro_preference_to_meet', $preference_to_meet);			
+			update_post_meta($post_id, 'mpro_mentor_late_response', $late_response);
+			update_post_meta($post_id, 'mpro_mentee_dream_job', $dream_job);
+			update_post_meta($post_id, 'mpro_preference_to_meet', $preference_to_meet);
+			update_post_meta($post_id, 'mpro_position_title', $position_title);
+			update_post_meta($post_id, 'mpro_company_name', $company_name);
+			update_post_meta($post_id, 'mpro_field_importance', $field_importance);
+			update_post_meta($post_id, 'mpro_alignment_preference', $alignment_preference);
+			update_post_meta($post_id, 'mpro_brief_bio', $brief_bio);
 
 		}
 	

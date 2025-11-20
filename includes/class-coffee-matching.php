@@ -17,17 +17,23 @@ class Coffee_Matching extends Matching_Base {
 			'post_date' => 'Date Created',
 			'mpro_role' => 'Role',
 			'mpro_email' => 'Email',
-			'mpro_phone' => 'Phone',
+			'mpro_position_title' => 'Position Title',
+			'mpro_company_name' => 'Company Name',
 			'mpro_years_worked' => 'Years Worked',
 			'mpro_seniority_level' => 'Seniority Level',
 			'mpro_field_of_work' => 'Field of Work',
 			'mpro_leadership_compass' => 'Leadership Compass',
 			'mpro_strengths' => 'Strengths',
-			'mpro_goals' => 'Goals',
-			'mpro_soft_skills' => 'Soft Skills',
+			'mpro_mentor_goals_have' => 'Mentor Goals Experience',
+			'mpro_mentee_goals_want' => 'Mentee Goals Interests',
+			'mpro_mentor_soft_skills_have' => 'Mentor Soft Skills Experience',
+			'mpro_mentee_soft_skills_want' => 'Mentee Soft Skills Interests',
 			'mpro_mentor_skill_have' => 'Mentor Skills Experience',
 			'mpro_mentee_skill_want' => 'Mentee Skills Interests',
 			'mpro_match_pref' => 'Matching Emphasis',
+			'mpro_field_importance' => 'Field Importance',
+			'mpro_alignment_preference' => 'Goals/Skills Preference',
+			'mpro_brief_bio' => 'Brief Bio',
 		];
 	}
 
@@ -247,12 +253,14 @@ class Coffee_Matching extends Matching_Base {
 			$mentee_seniority_level = $mentee_meta['mpro_seniority_level'] ?? '';
 			$mentee_leadership_compass = $mentee_meta['mpro_leadership_compass'] ?? '';
 			$mentee_field_of_work = $mentee_meta['mpro_field_of_work'] ?? '';
+			$mentee_field_importance = $mentee_meta['mpro_field_importance'] ?? '';
+			$mentee_alignment_preference = $mentee_meta['mpro_alignment_preference'] ?? '';
 
 			$mentee_match_pref = $mentee_meta['mpro_match_pref'] ?? '';
 
 			$mentee_strengths = $mentee_multi_meta['mpro_strengths'];
-			$mentee_goals = $mentee_multi_meta['mpro_goals'];
-			$mentee_soft_skills = $mentee_multi_meta['mpro_soft_skills'];
+			$mentee_goals = $mentee_multi_meta['mpro_mentee_goals_want'];
+			$mentee_soft_skills = $mentee_multi_meta['mpro_mentee_soft_skills_want'];
 
 			// Track mentor assignments
 			foreach ($mentors as $mentor) {
@@ -272,8 +280,8 @@ class Coffee_Matching extends Matching_Base {
 				extract($mentor_meta);
 				$mentor_years_worked = $mentor_meta['mpro_years_worked'] ?? '';
 				$mentor_strengths = $mentor_multi_meta['mpro_strengths'] ?? '';
-				$mentor_goals = $mentor_multi_meta['mpro_goals'] ?? '';
-				$mentor_soft_skills = $mentor_multi_meta['mpro_soft_skills'] ?? '';
+				$mentor_goals = $mentor_multi_meta['mpro_mentor_goals_have'] ?? '';
+				$mentor_soft_skills = $mentor_multi_meta['mpro_mentor_soft_skills_have'] ?? '';
 
 				$mentor_skills_have = $mentor_meta['mpro_mentor_skill_have'] ?? '';
 				$mentor_seniority_level = $mentor_meta['mpro_seniority_level'] ?? '';
@@ -329,6 +337,12 @@ class Coffee_Matching extends Matching_Base {
 				$max_score   += $goals_result['max_points'];
 				$match_fields[] = $goals_result['message'];
 
+				// ✅ Add bonus points if mentee prefers goals alignment
+				if ($mentee_alignment_preference === 'align on goals' && $goals_result['points'] > 0) {
+					$match_score += 5;
+					$match_fields[] = "Goals Alignment Bonus: +5 pts (mentee prioritizes goals)";
+				}
+
 				// ✅ Calculate points for Soft Skills match
 				$trait = 'Similar soft skills';
 				$soft_skills_result = $this->score_top3_trait_match(
@@ -342,6 +356,12 @@ class Coffee_Matching extends Matching_Base {
 				$match_score += $soft_skills_result['points'];
 				$max_score   += $soft_skills_result['max_points'];
 				$match_fields[] = $soft_skills_result['message'];
+
+				// ✅ Add bonus points if mentee prefers skills alignment
+				if ($mentee_alignment_preference === 'align on skills' && $soft_skills_result['points'] > 0) {
+					$match_score += 5;
+					$match_fields[] = "Skills Alignment Bonus: +5 pts (mentee prioritizes skills)";
+				}
 
 				// ✅ Calculate points for Leadership Compass match
 				$trait = 'Leadership Compass Match';
@@ -370,6 +390,20 @@ class Coffee_Matching extends Matching_Base {
 				$match_score += $field_of_work_result['points'];
 				$max_score   += $field_of_work_result['max_points'];
 				$match_fields[] = $field_of_work_result['message'];
+
+				// ✅ Add bonus points based on mentee's field importance preference
+				if ($field_of_work_result['points'] > 0) {
+					$field_bonus = 0;
+					if ($mentee_field_importance === 'Very Important') {
+						$field_bonus = 3;
+					} elseif ($mentee_field_importance === 'Somewhat important') {
+						$field_bonus = 2;
+					}
+					if ($field_bonus > 0) {
+						$match_score += $field_bonus;
+						$match_fields[] = "Field Importance Bonus: +{$field_bonus} pts ({$mentee_field_importance})";
+					}
+				}
 
 				// ✅ Calculate points for Years Worked match - mentor should have more experience
 				$years_worked_result = $this->score_years_worked_match(
