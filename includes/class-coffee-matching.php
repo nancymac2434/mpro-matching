@@ -28,8 +28,8 @@ class Coffee_Matching extends Matching_Base {
 			'mpro_mentee_goals_want' => 'Mentee Goals Interests',
 			'mpro_mentor_soft_skills_have' => 'Mentor Soft Skills Experience',
 			'mpro_mentee_soft_skills_want' => 'Mentee Soft Skills Interests',
-			'mpro_mentor_skill_have' => 'Mentor Skills Experience',
-			'mpro_mentee_skill_want' => 'Mentee Skills Interests',
+			'mpro_mentor_skills_have' => 'Mentor Skills Experience',
+			'mpro_mentee_skills_want' => 'Mentee Skills Interests',
 			'mpro_match_pref' => 'Matching Emphasis',
 			'mpro_field_importance' => 'Field Importance',
 			'mpro_alignment_preference' => 'Goals/Skills Preference',
@@ -248,8 +248,8 @@ class Coffee_Matching extends Matching_Base {
 			// Extract values
 			extract($mentee_meta);
 			$mentee_years_worked = $mentee_meta['mpro_years_worked'] ?? '';
-			$mentee_skills_want = $mentee_meta['mpro_mentee_skill_want'] ?? '';
-//error_log('mentee_skills_want : ' . $mentee_skills_want);
+			$mentee_skills_want = $mentee_multi_meta['mpro_mentee_skills_want'] ?? [];
+//error_log('mentee_skills_want : ' . print_r($mentee_skills_want, true));
 			$mentee_seniority_level = $mentee_meta['mpro_seniority_level'] ?? '';
 			$mentee_leadership_compass = $mentee_meta['mpro_leadership_compass'] ?? '';
 			$mentee_field_of_work = $mentee_meta['mpro_field_of_work'] ?? '';
@@ -283,7 +283,7 @@ class Coffee_Matching extends Matching_Base {
 				$mentor_goals = $mentor_multi_meta['mpro_mentor_goals_have'] ?? '';
 				$mentor_soft_skills = $mentor_multi_meta['mpro_mentor_soft_skills_have'] ?? '';
 
-				$mentor_skills_have = $mentor_meta['mpro_mentor_skill_have'] ?? '';
+				$mentor_skills_have = $mentor_multi_meta['mpro_mentor_skills_have'] ?? [];
 				$mentor_seniority_level = $mentor_meta['mpro_seniority_level'] ?? '';
 				$mentor_leadership_compass = $mentor_meta['mpro_leadership_compass'] ?? '';
 				$mentor_field_of_work = $mentor_meta['mpro_field_of_work'] ?? '';

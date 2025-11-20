@@ -234,204 +234,82 @@ class Leap4Ed_GravityForms {
 			$role_numeric = '1';
 		}
 
-		$gender = rgar($entry, '18'); 
-		$pronouns = rgar($entry, '94');  
-		$zip = rgar($entry, '33'); 
-		if ($client_id === 'leap4ed-chp') {
-			$race = rgar($entry, '124');
-		} else {
-			$race = rgar($entry, '47');
-		}	
-		//$foreign_born = rgar($entry, '51');
-		if ($role === 'mentee') {
-			$first_gen = rgar($entry, '118');  
-		} else {
-			$first_gen = rgar($entry, '119');  
-		}
-		if ($role === 'mentee') {
-			$ed = rgar($entry, '111'); 
-		} else {
-			$ed = rgar($entry, '37'); 
-		}
-		$career = rgar($entry, '73'); 
-		$match_pref = rgar($entry, '95');  // dragging field, contains string of numbers, i.e. 1,4,6,5,2,7,8
-		$grade_2025 = rgar($entry, '126');
-		
-		// mentor only
-		//$address = rgar($entry, '99');
-		if (($client_id === 'leap4ed-chp') && ($role === 'mentee')) {
-			$age = rgar($entry, '123'); 	
-		} else {
-			$age = rgar($entry, '98'); 	
-		}
-		$college = rgar($entry, '100'); 
-		$still_working = rgar($entry, '101'); 
-		$where_working = rgar($entry, '102');
-		if ($client_id === 'leap4ed-chp') {
-			$mentor_career_have =  rgar($entry, '128'); // dragging field, matches with mentee_career_want
-		} else {
-			$mentor_career_have =  rgar($entry, '83'); // dragging field, matches with mentee_career_want
-		} 
-		if ($client_id === 'leap4ed-chp') {
-			$mentor_skills_have =  rgar($entry, '130'); // dragging field, matches with mentee_career_want
-		} else {
-			$mentor_skills_have = rgar($entry, '110'); // dragging field, matches with mentee_skills_want
-		} 
-		
-		//$mentor_confidence = rgar($entry, '85'); 
-		 // dragging field, contains string of numbers, i.e. 1,4,6,5,2,7,8
-		$caring_experience = rgar($entry, '107'); 
-		$mentor_experience = rgar($entry, '105'); 
-		$leap_experience = rgar($entry, '106'); 
-		$late_response = rgar($entry, '108');
-		$dream_job = rgar($entry, '131');
-		$preference_to_meet = rgar($entry, '132');
-		$position_title = rgar($entry, '101');
-		$company_name = rgar($entry, '102');
-		$field_importance = rgar($entry, '105');
-		$alignment_preference = rgar($entry, '106');
-		$brief_bio = rgar($entry, '108');
+		// Save core meta fields (always needed for all clients)
+		update_post_meta($post_id, 'assigned_client', $client_id);
+		update_post_meta($post_id, 'mpro_fname', $fname);
+		update_post_meta($post_id, 'mpro_lname', $lname);
+		update_post_meta($post_id, 'mpro_email', $email);
+		update_post_meta($post_id, 'mpro_role', $role_numeric);
 
-		//mentee only
-		if ($client_id === 'leap4ed-chp') {
-			$mentee_career_want =  rgar($entry, '127'); // dragging field, matches with mentor_career_have
-		} else {
-			$mentee_career_want =  rgar($entry, '109'); // dragging field, matches with mentor_career_have
-		}
-		if ($client_id === 'leap4ed-chp') {
-			$mentee_skills_want = rgar($entry, '129'); // dragging field, matches with mentor_skills_have
-		} else {
-			$mentee_skills_want = rgar($entry, '96'); // dragging field, matches with mentor_skills_have
-		}
+		// Process address field (field 99) if present
+		update_post_meta($post_id, 'mpro_address', $address);
 
+		// SCHEMA-DRIVEN: Extract and save all fields defined in client's field_map
+		if ($schema && isset($schema['field_map'])) {
+			foreach ($schema['field_map'] as $field_id => $config) {
+				// Handle trait fields (TIPI)
+				if (isset($config['trait']) && $config['trait']) {
+					if (isset($likert_traits[$field_id])) {
+						$raw_value = rgar($entry, $field_id);
+						$mapped_response = mpro_map_likert_response($raw_value, $field_id);
 
-				
-		// TIPI
-		$trait_scores = []; // Store mapped responses and scores
-		
-		foreach ($likert_traits as $field_id => $trait) {
-			$raw_value = rgar($entry, $field_id);
-			$mapped_response = mpro_map_likert_response($raw_value, $field_id);
-		
-			// Store response & score
-			$trait_scores[$trait['name']] = [
-				'response' => $mapped_response['label'],
-				'score' => $mapped_response['score']
-			];
-		
-			// Save to WordPress meta
-			update_post_meta($post_id, "mpro_trait_{$field_id}", $mapped_response['label']);
-			update_post_meta($post_id, "mpro_trait_{$field_id}_score", $mapped_response['score']);
-		}
-		
-		$this->process_tipi_scores($entry, $post_id);		
-		
-		// ✅ Debugging Output (Optional)
-		//error_log(print_r($trait_scores, true));
+						update_post_meta($post_id, "mpro_trait_{$field_id}", $mapped_response['label']);
+						update_post_meta($post_id, "mpro_trait_{$field_id}_score", $mapped_response['score']);
+					}
+					continue;
+				}
 
-		// Define all multi-select fields
-		if ($client_id === 'leap4ed-chp') {
-			$multi_select_fields = [
-				'mpro_languages' => '125',
-				'mpro_interests' => '36',
-				'mpro_family_origin' => '45'
-			];
-		} elseif ($client_id === 'coffee') {
-			$multi_select_fields = [
-				'mpro_strengths' => '36',
-			];
-			// Add goals and soft skills fields based on role
-			if ($role === 'mentee') {
-				$multi_select_fields['mpro_mentee_goals_want'] = '96';
-				$multi_select_fields['mpro_mentee_soft_skills_want'] = '97';
-			} else {
-				$multi_select_fields['mpro_mentor_goals_have'] = '103';
-				$multi_select_fields['mpro_mentor_soft_skills_have'] = '104';
+				// Handle PHQ-4 fields
+				if (isset($config['phq4']) && $config['phq4']) {
+					// PHQ-4 processing (if needed in future)
+					continue;
+				}
+
+				// Handle regular meta fields
+				if (isset($config['meta_key'])) {
+					$meta_key = $config['meta_key'];
+
+					// Skip already-handled core fields
+					if (in_array($meta_key, ['mpro_fname', 'mpro_lname', 'mpro_email', 'mpro_role'])) {
+						continue;
+					}
+
+					// Extract value from entry
+					$value = rgar($entry, $field_id);
+
+					// Save to post meta
+					if ($value !== '' && $value !== null) {
+						update_post_meta($post_id, $meta_key, $value);
+					}
+				}
 			}
-		} else {
-			$multi_select_fields = [
-				'mpro_languages' => '35',
-				'mpro_interests' => '36',
-				'mpro_family_origin' => '45'
-			];
 		}
 
-		$multi_select_data = [];
-
-		// Loop through the fields and extract data dynamically
-		foreach ($multi_select_fields as $meta_key => $field_id) {
-			$multi_select_data[$meta_key] = mpro_extract_multiselect_values($entry, $field_id);
-		}
-		
-		$entry_data = GFAPI::get_entry($entry['id']); // Get full entry data
-		// Debugging: Print full gform entry data
-		//		error_log(print_r($entry_data, true));
-
-		// Coffee-specific fields
-		if ($client_id === 'coffee') {
-			$years_worked = rgar($entry, '107');
-			$seniority_level = rgar($entry, '73');
-			$field_of_work = rgar($entry, '99');
-			$leadership_compass = rgar($entry, '98');
-		}
-
-		// Store additional data in post meta
-
-			update_post_meta($post_id, 'assigned_client', $client_id);
-			update_post_meta($post_id, 'mpro_fname', $fname);
-			update_post_meta($post_id, 'mpro_lname', $lname);
-			update_post_meta($post_id, 'mpro_email', $email);
-			update_post_meta($post_id, 'mpro_role', $role_numeric); // Store numeric value: 1 = mentee, 2 = mentor
-			update_post_meta($post_id, 'mpro_gender', $gender);
-			update_post_meta($post_id, 'mpro_age', $age);
-			update_post_meta($post_id, 'mpro_college', $college);
-			update_post_meta($post_id, 'mpro_still_working', $still_working);
-			update_post_meta($post_id, 'mpro_where_working', $where_working);
-			update_post_meta($post_id, 'mpro_address', $address);
-			update_post_meta($post_id, 'mpro_grade_2025', $grade_2025);
-			update_post_meta($post_id, 'mpro_pronouns', $pronouns);
-			update_post_meta($post_id, 'mpro_match_pref', $match_pref); 
-			//update_post_meta($post_id, 'mpro_zip', $zip); 
-			update_post_meta($post_id, 'mpro_race', $race); 
-			update_post_meta($post_id, 'mpro_first_gen', $first_gen); 
-			//update_post_meta($post_id, 'mpro_foreign_born', $foreign_born); 
-			update_post_meta($post_id, 'mpro_ed', $ed); 
-			//update_post_meta($post_id, 'mpro_career', $career); 
-			//update_post_meta($post_id, 'mpro_mentee_skills', $mentee_skills); 
-			//update_post_meta($post_id, 'mpro_mentor_confidence', $mentor_confidence); 
-			update_post_meta($post_id, 'mpro_caring_experience', $caring_experience); 
-			update_post_meta($post_id, 'mpro_mentor_experience', $mentor_experience);
-			update_post_meta($post_id, 'mpro_leap_experience', $leap_experience);
-			
-			update_post_meta($post_id, 'mpro_mentor_career_have', $mentor_career_have);
-			update_post_meta($post_id, 'mpro_mentee_career_want', $mentee_career_want);
-			update_post_meta($post_id, 'mpro_mentor_skills_have', $mentor_skills_have);
-			update_post_meta($post_id, 'mpro_mentee_skills_want', $mentee_skills_want);			
-			
-			update_post_meta($post_id, 'mpro_mentor_late_response', $late_response);
-			update_post_meta($post_id, 'mpro_mentee_dream_job', $dream_job);
-			update_post_meta($post_id, 'mpro_preference_to_meet', $preference_to_meet);
-			update_post_meta($post_id, 'mpro_position_title', $position_title);
-			update_post_meta($post_id, 'mpro_company_name', $company_name);
-			update_post_meta($post_id, 'mpro_field_importance', $field_importance);
-			update_post_meta($post_id, 'mpro_alignment_preference', $alignment_preference);
-			update_post_meta($post_id, 'mpro_brief_bio', $brief_bio);
-
-			// Coffee-specific fields
-			if ($client_id === 'coffee') {
-				update_post_meta($post_id, 'mpro_years_worked', $years_worked);
-				update_post_meta($post_id, 'mpro_seniority_level', $seniority_level);
-				update_post_meta($post_id, 'mpro_field_of_work', $field_of_work);
-				update_post_meta($post_id, 'mpro_leadership_compass', $leadership_compass);
+		// Process TIPI scores (calculate aggregate scores) - only for clients that use TIPI
+		$has_trait_fields = false;
+		if ($schema && isset($schema['field_map'])) {
+			foreach ($schema['field_map'] as $field_id => $config) {
+				if (isset($config['trait']) && $config['trait']) {
+					$has_trait_fields = true;
+					break;
+				}
 			}
-
 		}
-	
-		// Loop through dynamically extracted multi-select fields and store them
-		foreach ($multi_select_data as $meta_key => $values) {
-			if (!empty($values)) {
-				update_post_meta($post_id, $meta_key, $values);
+
+		if ($has_trait_fields && isset($likert_traits) && !empty($likert_traits)) {
+			$this->process_tipi_scores($entry, $post_id);
+		}
+
+		// SCHEMA-DRIVEN: Handle multi-select fields from schema
+		if ($schema && isset($schema['multi_selects'])) {
+			foreach ($schema['multi_selects'] as $meta_key => $field_id) {
+				$values = mpro_extract_multiselect_values($entry, $field_id);
+				if (!empty($values)) {
+					update_post_meta($post_id, $meta_key, $values);
+				}
 			}
+		}
+
 		}
 	}
 

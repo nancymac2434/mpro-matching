@@ -26,8 +26,8 @@ class Salem_Matching extends Matching_Base {
 			'mpro_career_match' => 'Career Interest',
 			'mpro_languages' => 'Languages',
 			'mpro_interests' => 'Hobbies/Interests',
-			'mpro_mentor_skill_have' => 'Mentor Skills Experience',
-			'mpro_mentee_skill_want' => 'Mentee Skills Interests',
+			'mpro_mentor_skills_have' => 'Mentor Skills Experience',
+			'mpro_mentee_skills_want' => 'Mentee Skills Interests',
 			'mpro_match_pref' => 'Matching Emphasis',
 		];
 	}

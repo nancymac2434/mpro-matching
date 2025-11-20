@@ -60,10 +60,10 @@ function get_matching_schema($client_id) {
 				'max_mentees_per_mentor' => 13,
 				'single_meta_fields' => [
 					'mpro_ssu_id' , 'mpro_gender', 'mpro_family_origin', 'mpro_age', 'mpro_ed', 'mpro_match_pref', 'mpro_career_match',
-					'mpro_mentor_skill_have', 'mpro_mentee_skill_want',
 				],
 				'multi_meta_fields' => [
-					'mpro_interests', 'mpro_languages'
+					'mpro_interests', 'mpro_languages',
+					'mpro_mentor_skills_have', 'mpro_mentee_skills_want'
 				],
 				'field_map' => [
 					'1.3' => ['meta_key' => 'mpro_fname'],
@@ -77,18 +77,20 @@ function get_matching_schema($client_id) {
 					'37'  => ['meta_key' => 'mpro_education'],
 					'94'  => ['meta_key' => 'mpro_match_pref'],
 					'95'  => ['meta_key' => 'mpro_ssu_id'],
-					'85'  => ['meta_key' => 'mpro_mentor_skill_have'],
-					'83'  => ['meta_key' => 'mpro_mentee_skill_want'],
+					'85'  => ['meta_key' => 'mpro_mentor_skills_have'],
+					'83'  => ['meta_key' => 'mpro_mentee_skills_want'],
 				],
 	
 				'multi_selects' => [
 					'mpro_languages' => '35',
 					'mpro_interests' => '36',
+					'mpro_mentor_skills_have' => '85',
+					'mpro_mentee_skills_want' => '83',
 				],
 	
 				'skills_match' => [
-					'mpro_mentor_skill_have' => '85',
-					'mpro_mentee_skill_want' => '83',
+					'mpro_mentor_skills_have' => '85',
+					'mpro_mentee_skills_want' => '83',
 				],
 	
 				'match_bonus_fields' => [
@@ -99,14 +101,14 @@ function get_matching_schema($client_id) {
 	 	'coffee' => [
 				'max_mentees_per_mentor' => 1,
 				'single_meta_fields' => [
-					'mpro_years_worked', 'mpro_match_pref', 'mpro_seniority_level',
-					'mpro_mentor_skill_have', 'mpro_mentee_skill_want', 'mpro_leadership_compass',
+					'mpro_years_worked', 'mpro_seniority_level',
+					'mpro_leadership_compass',
 					'mpro_field_of_work', 'mpro_position_title', 'mpro_company_name',
 					'mpro_field_importance', 'mpro_alignment_preference', 'mpro_brief_bio',
 				],
 				'multi_meta_fields' => [
 					'mpro_strengths', 'mpro_mentor_goals_have', 'mpro_mentee_goals_want',
-					'mpro_mentor_soft_skills_have', 'mpro_mentee_soft_skills_want'
+					'mpro_mentor_soft_skills_have', 'mpro_mentee_soft_skills_want',
 				],
 				'field_map' => [
 					'1.3' => ['meta_key' => 'mpro_fname'],
@@ -115,9 +117,6 @@ function get_matching_schema($client_id) {
 					'92'  => ['meta_key' => 'mpro_role'],
 					'73'  => ['meta_key' => 'mpro_seniority_level'],
 					'107' => ['meta_key' => 'mpro_years_worked'],
-					'94'  => ['meta_key' => 'mpro_match_pref'],
-					'85'  => ['meta_key' => 'mpro_mentor_skill_have'],
-					'83'  => ['meta_key' => 'mpro_mentee_skill_want'],
 					'36'  => ['meta_key' => 'mpro_strengths'],
 					'96'  => ['meta_key' => 'mpro_mentee_goals_want'],
 					'103' => ['meta_key' => 'mpro_mentor_goals_have'],
@@ -140,11 +139,6 @@ function get_matching_schema($client_id) {
 					'mpro_mentor_soft_skills_have' => '104',
 				],
 
-				'skills_match' => [
-					'mpro_mentor_skill_have' => '85',
-					'mpro_mentee_skill_want' => '83',
-				],
-
 				'goals_match' => [
 					'mpro_mentor_goals_have' => '103',
 					'mpro_mentee_goals_want' => '96',
@@ -154,10 +148,6 @@ function get_matching_schema($client_id) {
 					'mpro_mentor_soft_skills_have' => '104',
 					'mpro_mentee_soft_skills_want' => '97',
 				],
-
-				'match_bonus_fields' => [
-					'mpro_match_pref' => ['field_id' => '94', 'type' => 'ranked'],
-				]
 	],
 
 		'leap4ed-chp' => [
