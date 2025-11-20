@@ -366,7 +366,15 @@ class Leap4Ed_GravityForms {
 		$entry_data = GFAPI::get_entry($entry['id']); // Get full entry data
 		// Debugging: Print full gform entry data
 		//		error_log(print_r($entry_data, true));
-		
+
+		// Coffee-specific fields
+		if ($client_id === 'coffee') {
+			$years_worked = rgar($entry, '107');
+			$seniority_level = rgar($entry, '73');
+			$field_of_work = rgar($entry, '99');
+			$leadership_compass = rgar($entry, '98');
+		}
+
 		// Store additional data in post meta
 
 			update_post_meta($post_id, 'assigned_client', $client_id);
@@ -408,6 +416,14 @@ class Leap4Ed_GravityForms {
 			update_post_meta($post_id, 'mpro_field_importance', $field_importance);
 			update_post_meta($post_id, 'mpro_alignment_preference', $alignment_preference);
 			update_post_meta($post_id, 'mpro_brief_bio', $brief_bio);
+
+			// Coffee-specific fields
+			if ($client_id === 'coffee') {
+				update_post_meta($post_id, 'mpro_years_worked', $years_worked);
+				update_post_meta($post_id, 'mpro_seniority_level', $seniority_level);
+				update_post_meta($post_id, 'mpro_field_of_work', $field_of_work);
+				update_post_meta($post_id, 'mpro_leadership_compass', $leadership_compass);
+			}
 
 		}
 	

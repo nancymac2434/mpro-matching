@@ -95,10 +95,10 @@ add_shortcode('data_report', 'mpro_generate_report');
 
 function mpro_generate_report($atts) {
 	$atts = shortcode_atts(array(
-		'clientid' => '',
+		'client_id' => '',
 	), $atts);
 
-	$client_id = sanitize_text_field($atts['clientid']);
+	$client_id = sanitize_text_field($atts['client_id']);
 	$user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : null;
 
 	// If CSV is requested
