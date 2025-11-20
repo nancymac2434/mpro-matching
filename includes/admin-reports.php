@@ -91,7 +91,7 @@ function mpro_output_csv_report($user_id = null, $client_id = 'leap4ed') {
 }
 
 // Shortcode
-add_shortcode('leap4ed_data_dump', 'mpro_generate_report');
+add_shortcode('data_report', 'mpro_generate_report');
 
 function mpro_generate_report($atts) {
 	$atts = shortcode_atts(array(

@@ -338,6 +338,9 @@ if (!function_exists('mpro_download_matches_csv')) {
 		$result  = $engine->generate_matching_report();
 		$matches = $result['matches'] ?? [];
 
+		// Get profile fields from the matching engine
+		$report_fields = method_exists($engine, 'get_report_fields') ? $engine->get_report_fields() : [];
+
 		$filename = "mpro_matches_{$client_id}.csv";
 
 		// Send headers for a clean file download (no caching)
@@ -348,31 +351,91 @@ if (!function_exists('mpro_download_matches_csv')) {
 		$out = fopen('php://output', 'w');
 		if ($out === false) wp_die('Unable to open output stream.');
 
-		// CSV header row - filterable
-		$columns = apply_filters('mpro_matches_csv_columns', [
-			'Mentee', 'Mentor', 'Score (%)', 'Matched Fields'
-		], $client_id);
+		// Build CSV header row with all profile fields
+		$columns = ['Mentee ID', 'Mentee Name'];
+
+		// Add mentee profile fields
+		foreach ($report_fields as $key => $label) {
+			$columns[] = 'Mentee ' . $label;
+		}
+
+		$columns[] = 'Mentor ID';
+		$columns[] = 'Mentor Name';
+
+		// Add mentor profile fields
+		foreach ($report_fields as $key => $label) {
+			$columns[] = 'Mentor ' . $label;
+		}
+
+		// Add match data columns at the end
+		$columns[] = 'Match Score (%)';
+		$columns[] = 'Matched Fields';
+
+		// Allow filtering of columns
+		$columns = apply_filters('mpro_matches_csv_columns', $columns, $client_id);
 
 		fputcsv($out, $columns);
 
-		// CSV data rows - filterable
+		// CSV data rows
 		foreach ($matches as $m) {
-			// Default row data
-			$default_row = [
-				'Mentee'         => $m['mentee']     ?? '',
-				'Mentor'         => $m['mentor']     ?? '',
-				'Score (%)'      => $m['percentage'] ?? '',
-				'Matched Fields' => $m['field']      ?? '',
-			];
+			$row_values = [];
+
+			// Mentee basic info
+			$mentee_id = $m['mentee_id'] ?? 0;
+			$row_values[] = $mentee_id;
+			$row_values[] = $m['mentee'] ?? '';
+
+			// Mentee profile fields
+			foreach ($report_fields as $key => $label) {
+				$value = get_post_meta($mentee_id, $key, true);
+
+				// Format special fields
+				if ($key === 'mpro_role') {
+					$value = ($value == 1) ? 'Mentee' : (($value == 2) ? 'Mentor' : 'Unknown');
+				} elseif ($key === 'post_date') {
+					$post_date = get_post_field('post_date', $mentee_id);
+					$value = $post_date ? mysql2date('m/d/Y', $post_date) : '';
+				}
+
+				// Convert arrays to comma-separated strings
+				if (is_array($value)) {
+					$value = implode(', ', $value);
+				}
+
+				$row_values[] = $value ?: '';
+			}
+
+			// Mentor basic info
+			$mentor_id = $m['mentor_id'] ?? 0;
+			$row_values[] = $mentor_id;
+			$row_values[] = $m['mentor'] ?? '';
+
+			// Mentor profile fields
+			foreach ($report_fields as $key => $label) {
+				$value = get_post_meta($mentor_id, $key, true);
+
+				// Format special fields
+				if ($key === 'mpro_role') {
+					$value = ($value == 1) ? 'Mentee' : (($value == 2) ? 'Mentor' : 'Unknown');
+				} elseif ($key === 'post_date') {
+					$post_date = get_post_field('post_date', $mentor_id);
+					$value = $post_date ? mysql2date('m/d/Y', $post_date) : '';
+				}
+
+				// Convert arrays to comma-separated strings
+				if (is_array($value)) {
+					$value = implode(', ', $value);
+				}
+
+				$row_values[] = $value ?: '';
+			}
+
+			// Match data
+			$row_values[] = $m['percentage'] ?? '';
+			$row_values[] = $m['field'] ?? '';
 
 			// Allow filtering of row data
-			$row = apply_filters('mpro_matches_csv_row', $default_row, $m, $client_id);
-
-			// Ensure row values are in the same order as headers
-			$row_values = [];
-			foreach ($columns as $col) {
-				$row_values[] = $row[$col] ?? '';
-			}
+			$row_values = apply_filters('mpro_matches_csv_row', $row_values, $m, $client_id);
 
 			fputcsv($out, $row_values);
 		}
