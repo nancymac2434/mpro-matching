@@ -5,6 +5,8 @@ function get_matching_class_for_client( $client_id ) {
 			return new Leap4Ed_Matching($client_id);
 		case 'salem':
 			return new Salem_Matching($client_id);
+		case 'coffee':
+			return new Coffee_Matching($client_id);
 		default:
 			return new Matching_Base($client_id); // fallback or wp_die
 	}
