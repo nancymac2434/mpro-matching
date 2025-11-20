@@ -200,10 +200,41 @@ class Leap4Ed_GravityForms {
 		// Post created successfully, continue with meta updates
 		if ($post_id) {
 			
+		// Get the schema to read field IDs dynamically
+		$schema = get_matching_schema($client_id);
+
 		// Extract survey data
-		$email = rgar($entry, '3'); 
-		$phone = rgar($entry, '2'); 
-		$role  = rgar($entry, '97'); 
+		$email = rgar($entry, '3');
+		$phone = rgar($entry, '2');
+
+		// Get role field ID from schema (different forms use different field IDs)
+		$role_field_id = '97'; // default for leap4ed-chp
+		if ($schema && isset($schema['field_map'])) {
+			foreach ($schema['field_map'] as $field_id => $config) {
+				if (isset($config['meta_key']) && $config['meta_key'] === 'mpro_role') {
+					$role_field_id = $field_id;
+					break;
+				}
+			}
+		}
+		$role  = rgar($entry, $role_field_id);
+
+		// Normalize role to ensure consistent format
+		// Handle both numeric values (1, 2) and text labels (Mentee, Mentor, mentee, mentor)
+		$role_lower = strtolower(trim($role));
+		if ($role_lower === 'mentee' || $role === '1' || $role === 1) {
+			$role = 'mentee';
+			$role_numeric = '1';
+		} elseif ($role_lower === 'mentor' || $role === '2' || $role === 2) {
+			$role = 'mentor';
+			$role_numeric = '2';
+		} else {
+			// Log unexpected role value and use default
+			error_log("MPro Matching: Unexpected role value '{$role}' for entry {$entry['id']}");
+			$role = 'mentee'; // default to mentee
+			$role_numeric = '1';
+		}
+
 		$gender = rgar($entry, '18'); 
 		$pronouns = rgar($entry, '94');  
 		$zip = rgar($entry, '33'); 
@@ -327,7 +358,7 @@ class Leap4Ed_GravityForms {
 			update_post_meta($post_id, 'mpro_lname', $lname);
 			update_post_meta($post_id, 'mpro_email', $email);
 			update_post_meta($post_id, 'mpro_phone', $phone);
-			update_post_meta($post_id, 'mpro_role', $role);
+			update_post_meta($post_id, 'mpro_role', $role_numeric); // Store numeric value: 1 = mentee, 2 = mentor
 			update_post_meta($post_id, 'mpro_gender', $gender);
 			update_post_meta($post_id, 'mpro_age', $age);
 			update_post_meta($post_id, 'mpro_college', $college);
