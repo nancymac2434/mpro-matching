@@ -28,9 +28,9 @@ class Coffee_Matching extends Matching_Base {
 			'mpro_mentee_goals_want' => 'Mentee Goals Interests',
 			'mpro_mentor_soft_skills_have' => 'Mentor Soft Skills Experience',
 			'mpro_mentee_soft_skills_want' => 'Mentee Soft Skills Interests',
-			'mpro_mentor_skills_have' => 'Mentor Skills Experience',
-			'mpro_mentee_skills_want' => 'Mentee Skills Interests',
-			'mpro_match_pref' => 'Matching Emphasis',
+			//'mpro_mentor_skills_have' => 'Mentor Skills Experience',
+			//'mpro_mentee_skills_want' => 'Mentee Skills Interests',
+			//'mpro_match_pref' => 'Matching Emphasis',
 			'mpro_field_importance' => 'Field Importance',
 			'mpro_alignment_preference' => 'Goals/Skills Preference',
 			'mpro_brief_bio' => 'Brief Bio',
@@ -41,13 +41,6 @@ class Coffee_Matching extends Matching_Base {
 
 	public function get_all_trait_settings(): array {
 		return [
-			'Similar mentoring goals' => [
-				'cap' => 12,
-				'base_per_match' => 4.0,
-				'bonus_per_match' => 1.5,
-				'description' => 'Skill Building',
-				'bonus_eligible' => true,
-			],
 			'Similar strengths' => [
 				'cap' => 12,
 				'base_per_match' => 4.0,
@@ -196,7 +189,7 @@ class Coffee_Matching extends Matching_Base {
 	public function generate_matching_report(): array {
 		global $wpdb;
 
-		// 1️⃣ Get all mentees for a specific assigned client
+		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive)
 		$mentees = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -204,10 +197,14 @@ class Coffee_Matching extends Matching_Base {
 				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} s
+					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
 			", MPRO_ROLE_MENTEE, $this->client_id)
 		);
 
-		// 2️⃣ Get all mentors for a specific assigned client
+		// 2️⃣ Get all mentors for a specific assigned client (excluding inactive)
 		$mentors = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -215,6 +212,10 @@ class Coffee_Matching extends Matching_Base {
 				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} s
+					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
 			", MPRO_ROLE_MENTOR, $this->client_id)
 		);
 
@@ -294,20 +295,6 @@ class Coffee_Matching extends Matching_Base {
 				$max_score = 0;
 				$match_fields = [];
 				$tipi_match_score = 0;
-
-				// ✅ Calculate points for Skills
-				$trait = 'Similar mentoring goals';
-				$skills_result = $this->score_top3_trait_match(
-					$trait,
-					'',  //$mentor_match_pref,
-					'',  //$mentee_match_pref,
-					$mentor_skills_have,
-					$mentee_skills_want
-				);
-
-				$match_score += $skills_result['points'];
-				$max_score   += $skills_result['max_points'];
-				$match_fields[] = $skills_result['message'];
 
 				// ✅ Calculate points for Strengths match
 				$trait = 'Similar strengths';

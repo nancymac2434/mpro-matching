@@ -61,7 +61,7 @@ class Matching_Base {
 		'mpro_mentee_career_want' => 'Mentee Career Interests',
 		//'mpro_mentor_skill_have' => 'Mentor Skills Experience',
 		//'mpro_mentee_skill_want' => 'Mentee Skills Interests',
-		'mpro_match_pref' => 'Matching Emphasis',
+		//'mpro_match_pref' => 'Matching Emphasis',
 		'mpro_first_gen' => 'First Gen?',
 		'mpro_caring_experience' => 'Caring exp',
 		'mpro_mentor_experience' => 'Mentor exp',

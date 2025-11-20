@@ -115,8 +115,6 @@ add_action('init', function () {
 		'mpro_email'             => ['type' => 'string',  'sanitize' => function($v){ return sanitize_email($v); }],
 		'mpro_position_title'    => ['type' => 'string',  'sanitize' => function($v){ return sanitize_text_field($v); }],
 		'mpro_company_name'      => ['type' => 'string',  'sanitize' => function($v){ return sanitize_text_field($v); }],
-		'mpro_field_importance'  => ['type' => 'string',  'sanitize' => function($v){ return sanitize_text_field($v); }],
-		'mpro_alignment_preference' => ['type' => 'string',  'sanitize' => function($v){ return sanitize_text_field($v); }],
 		'mpro_brief_bio'         => ['type' => 'string',  'sanitize' => function($v){ return sanitize_textarea_field($v); }],
 	];
 	foreach ($keys as $meta_key => $opts) {
@@ -147,8 +145,6 @@ add_action('add_meta_boxes', function () {
 				'mpro_email'             => get_post_meta($post->ID, 'mpro_email', true),
 				'mpro_position_title'    => get_post_meta($post->ID, 'mpro_position_title', true),
 				'mpro_company_name'      => get_post_meta($post->ID, 'mpro_company_name', true),
-				'mpro_field_importance'  => get_post_meta($post->ID, 'mpro_field_importance', true),
-				'mpro_alignment_preference' => get_post_meta($post->ID, 'mpro_alignment_preference', true),
 				'mpro_brief_bio'         => get_post_meta($post->ID, 'mpro_brief_bio', true),
 			];
 
@@ -158,8 +154,6 @@ add_action('add_meta_boxes', function () {
 			$em  = esc_attr($vals['mpro_email']);
 			$pt  = esc_attr($vals['mpro_position_title']);
 			$cn  = esc_attr($vals['mpro_company_name']);
-			$fi  = esc_attr($vals['mpro_field_importance']);
-			$ap  = esc_attr($vals['mpro_alignment_preference']);
 			$bb  = esc_textarea($vals['mpro_brief_bio']);
 
 			echo <<<HTML
@@ -199,18 +193,10 @@ add_action('add_meta_boxes', function () {
 	<input type="text" id="mpro_company_name" name="mpro_company_name" value="{$cn}">
   </div>
   <div class="field">
-	<label for="mpro_field_importance">Field Importance</label>
-	<input type="text" id="mpro_field_importance" name="mpro_field_importance" value="{$fi}">
-  </div>
-  <div class="field">
-	<label for="mpro_alignment_preference">Goals/Skills Preference</label>
-	<input type="text" id="mpro_alignment_preference" name="mpro_alignment_preference" value="{$ap}">
-  </div>
-  <div class="field">
 	<label for="mpro_brief_bio">Brief Bio</label>
 	<textarea id="mpro_brief_bio" name="mpro_brief_bio" rows="4">{$bb}</textarea>
   </div>
-  <p class="description">Only admins (or editors) can change these. All other meta remains locked.</p>
+  <p class="description">Only admins (or editors) can change these text fields. Dropdown/multi-select fields (goals, skills, etc.) are locked to prevent data integrity issues with the matching algorithm.</p>
 </div>
 HTML;
 		},
@@ -226,7 +212,7 @@ add_action('save_post_mentor_submission', function($post_id){
 	if (!isset($_POST['mentor_admin_editables_nonce']) || !wp_verify_nonce($_POST['mentor_admin_editables_nonce'],'save_mentor_admin_editables')) return;
 	if (!current_user_can('edit_post', $post_id)) return;
 
-	$map = ['max_matches_per_mentor','mpro_fname','mpro_lname','mpro_email','mpro_position_title','mpro_company_name','mpro_field_importance','mpro_alignment_preference','mpro_brief_bio'];
+	$map = ['max_matches_per_mentor','mpro_fname','mpro_lname','mpro_email','mpro_position_title','mpro_company_name','mpro_brief_bio'];
 
 	foreach ($map as $key) {
 		if (!array_key_exists($key, $_POST)) continue; // not present on this save

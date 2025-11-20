@@ -26,9 +26,9 @@ class Salem_Matching extends Matching_Base {
 			'mpro_career_match' => 'Career Interest',
 			'mpro_languages' => 'Languages',
 			'mpro_interests' => 'Hobbies/Interests',
-			'mpro_mentor_skills_have' => 'Mentor Skills Experience',
-			'mpro_mentee_skills_want' => 'Mentee Skills Interests',
-			'mpro_match_pref' => 'Matching Emphasis',
+			//'mpro_mentor_skills_have' => 'Mentor Skills Experience',
+			//'mpro_mentee_skills_want' => 'Mentee Skills Interests',
+			//'mpro_match_pref' => 'Matching Emphasis',
 		];
 	}
 
@@ -89,7 +89,7 @@ class Salem_Matching extends Matching_Base {
 	public function generate_matching_report(): array {
 		global $wpdb;
 
-		// 1️⃣ Get all mentees for a specific assigned client
+		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive)
 		$mentees = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -97,10 +97,14 @@ class Salem_Matching extends Matching_Base {
 				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} s
+					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
 			", MPRO_ROLE_MENTEE, $this->client_id)
 		);
 
-		// 2️⃣ Get all mentors for a specific assigned client
+		// 2️⃣ Get all mentors for a specific assigned client (excluding inactive)
 		$mentors = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -108,6 +112,10 @@ class Salem_Matching extends Matching_Base {
 				INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id AND r.meta_key = 'mpro_role' AND r.meta_value = %s
 				INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id AND c.meta_key = 'assigned_client' AND c.meta_value = %s
 				WHERE p.post_type = 'mentor_submission' AND p.post_status = 'publish'
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} s
+					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
 			", MPRO_ROLE_MENTOR, $this->client_id)
 		);
 		
@@ -200,7 +208,7 @@ class Salem_Matching extends Matching_Base {
 				$match_score += $career_result['points'];
 				$max_score   += $career_result['max_points'];
 				$match_fields[] = $career_result['message'];
-				
+
 				// ✅ Calculate points for Skills
 				$trait = 'Similar mentoring goals';
 				$skills_result = $this->score_top3_trait_match(
@@ -210,11 +218,11 @@ class Salem_Matching extends Matching_Base {
 					$mentor_skills_have,
 					$mentee_skills_want
 				);
-				
+
 				$match_score += $skills_result['points'];
 				$max_score   += $skills_result['max_points'];
 				$match_fields[] = $skills_result['message'];
-				
+
 				// ✅ Calculate points for Hobbies match based on mentee & mentor match preferences
 				//These 3 cats are ranked: career interests, Similar hobbies and interests, Similar family and cultural
 				$trait = 'Similar hobbies and interests';
