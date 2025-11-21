@@ -219,6 +219,77 @@ add_action('admin_menu', function() {
 			exit;
 		}		
 	);
-	
+
 
 });
+
+/**
+ * AJAX handler for approving a match
+ */
+add_action('wp_ajax_mpro_approve_match', 'mpro_ajax_approve_match');
+add_action('wp_ajax_nopriv_mpro_approve_match', 'mpro_ajax_approve_match');
+
+function mpro_ajax_approve_match() {
+	// Verify nonce
+	check_ajax_referer('mpro_match_action', 'nonce');
+
+	$mentee_id = isset($_POST['mentee_id']) ? absint($_POST['mentee_id']) : 0;
+	$mentor_id = isset($_POST['mentor_id']) ? absint($_POST['mentor_id']) : 0;
+
+	if (!$mentee_id || !$mentor_id) {
+		wp_send_json_error(['message' => 'Invalid mentee or mentor ID.']);
+		return;
+	}
+
+	// Check for existing approval
+	if (mpro_is_match_approved($mentee_id, $mentor_id)) {
+		wp_send_json_error(['message' => 'This match is already approved.']);
+		return;
+	}
+
+	// Check if mentee is already matched with someone else
+	$existing_mentor = get_post_meta($mentee_id, 'mpro_approved_mentor_id', true);
+	if ($existing_mentor && $existing_mentor != $mentor_id) {
+		$existing_mentor_post = get_post($existing_mentor);
+		$existing_mentor_name = $existing_mentor_post ? $existing_mentor_post->post_title : 'another mentor';
+		wp_send_json_error([
+			'message' => 'This mentee is already approved with ' . $existing_mentor_name . '. Please unapprove that match first.'
+		]);
+		return;
+	}
+
+	$success = mpro_approve_match($mentee_id, $mentor_id);
+
+	if ($success) {
+		wp_send_json_success(['message' => 'Match approved successfully.']);
+	} else {
+		wp_send_json_error(['message' => 'Failed to approve match.']);
+	}
+}
+
+/**
+ * AJAX handler for unapproving a match
+ */
+add_action('wp_ajax_mpro_unapprove_match', 'mpro_ajax_unapprove_match');
+add_action('wp_ajax_nopriv_mpro_unapprove_match', 'mpro_ajax_unapprove_match');
+
+function mpro_ajax_unapprove_match() {
+	// Verify nonce
+	check_ajax_referer('mpro_match_action', 'nonce');
+
+	$mentee_id = isset($_POST['mentee_id']) ? absint($_POST['mentee_id']) : 0;
+	$mentor_id = isset($_POST['mentor_id']) ? absint($_POST['mentor_id']) : 0;
+
+	if (!$mentee_id || !$mentor_id) {
+		wp_send_json_error(['message' => 'Invalid mentee or mentor ID.']);
+		return;
+	}
+
+	$success = mpro_unapprove_match($mentee_id, $mentor_id);
+
+	if ($success) {
+		wp_send_json_success(['message' => 'Match unapproved successfully.']);
+	} else {
+		wp_send_json_error(['message' => 'Failed to unapprove match.']);
+	}
+}

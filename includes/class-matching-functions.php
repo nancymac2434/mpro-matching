@@ -446,3 +446,153 @@ if (!function_exists('mpro_download_matches_csv')) {
 		exit;
 	}
 }
+
+/**
+ * ========================================
+ * APPROVED MATCHES FUNCTIONS
+ * ========================================
+ */
+
+/**
+ * Approve a match between mentee and mentor.
+ * Saves bidirectional meta for data integrity.
+ *
+ * @param int $mentee_id The mentee post ID
+ * @param int $mentor_id The mentor post ID
+ * @return bool True on success, false on failure
+ */
+if (!function_exists('mpro_approve_match')) {
+	function mpro_approve_match($mentee_id, $mentor_id) {
+		$mentee_id = absint($mentee_id);
+		$mentor_id = absint($mentor_id);
+
+		if (!$mentee_id || !$mentor_id) {
+			return false;
+		}
+
+		// Store approved mentor on mentee
+		update_post_meta($mentee_id, 'mpro_approved_mentor_id', $mentor_id);
+
+		// Store approved mentees on mentor (as array)
+		$approved_mentees = get_post_meta($mentor_id, 'mpro_approved_mentee_ids', true);
+		if (!is_array($approved_mentees)) {
+			$approved_mentees = [];
+		}
+
+		if (!in_array($mentee_id, $approved_mentees)) {
+			$approved_mentees[] = $mentee_id;
+			update_post_meta($mentor_id, 'mpro_approved_mentee_ids', $approved_mentees);
+		}
+
+		return true;
+	}
+}
+
+/**
+ * Unapprove a match between mentee and mentor.
+ * Removes bidirectional meta.
+ *
+ * @param int $mentee_id The mentee post ID
+ * @param int $mentor_id The mentor post ID
+ * @return bool True on success, false on failure
+ */
+if (!function_exists('mpro_unapprove_match')) {
+	function mpro_unapprove_match($mentee_id, $mentor_id) {
+		$mentee_id = absint($mentee_id);
+		$mentor_id = absint($mentor_id);
+
+		if (!$mentee_id || !$mentor_id) {
+			return false;
+		}
+
+		// Remove approved mentor from mentee
+		delete_post_meta($mentee_id, 'mpro_approved_mentor_id');
+
+		// Remove mentee from mentor's approved list
+		$approved_mentees = get_post_meta($mentor_id, 'mpro_approved_mentee_ids', true);
+		if (is_array($approved_mentees)) {
+			$approved_mentees = array_diff($approved_mentees, [$mentee_id]);
+			if (!empty($approved_mentees)) {
+				update_post_meta($mentor_id, 'mpro_approved_mentee_ids', array_values($approved_mentees));
+			} else {
+				delete_post_meta($mentor_id, 'mpro_approved_mentee_ids');
+			}
+		}
+
+		return true;
+	}
+}
+
+/**
+ * Get all approved matches for a client.
+ * Returns array of match data with mentee/mentor details.
+ *
+ * @param string $client_id The client ID
+ * @return array Array of approved matches with structure matching generate_matching_report
+ */
+if (!function_exists('mpro_get_approved_matches')) {
+	function mpro_get_approved_matches($client_id) {
+		global $wpdb;
+
+		// Query all mentees with approved mentors for this client
+		$results = $wpdb->get_results($wpdb->prepare("
+			SELECT
+				p.ID as mentee_id,
+				p.post_title as mentee_name,
+				pm.meta_value as mentor_id
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} r ON p.ID = r.post_id
+				AND r.meta_key = 'mpro_role' AND r.meta_value = %s
+			INNER JOIN {$wpdb->postmeta} c ON p.ID = c.post_id
+				AND c.meta_key = 'assigned_client' AND c.meta_value = %s
+			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				AND pm.meta_key = 'mpro_approved_mentor_id'
+			WHERE p.post_type = 'mentor_submission'
+				AND p.post_status = 'publish'
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} s
+					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
+		", MPRO_ROLE_MENTEE, $client_id));
+
+		$approved_matches = [];
+
+		foreach ($results as $row) {
+			$mentee_id = (int)$row->mentee_id;
+			$mentor_id = (int)$row->mentor_id;
+			$mentor_post = get_post($mentor_id);
+
+			// Validate mentor exists and is active
+			if (!$mentor_post) {
+				continue;
+			}
+
+			$approved_matches[] = [
+				'mentee_id' => $mentee_id,
+				'mentor_id' => $mentor_id,
+				'mentee' => $row->mentee_name,
+				'mentor' => $mentor_post->post_title,
+				'score' => 0, // Approved matches don't have scores
+				'percentage' => 'Approved',
+				'field' => 'Manually approved match',
+				'is_approved' => true,
+			];
+		}
+
+		return $approved_matches;
+	}
+}
+
+/**
+ * Check if a specific match is approved.
+ *
+ * @param int $mentee_id The mentee post ID
+ * @param int $mentor_id The mentor post ID
+ * @return bool True if approved, false otherwise
+ */
+if (!function_exists('mpro_is_match_approved')) {
+	function mpro_is_match_approved($mentee_id, $mentor_id) {
+		$approved_mentor = get_post_meta($mentee_id, 'mpro_approved_mentor_id', true);
+		return absint($approved_mentor) === absint($mentor_id);
+	}
+}

@@ -87,7 +87,20 @@ class Leap4Ed_Matching extends Matching_Base {
 	public function generate_matching_report(): array {
 		global $wpdb;
 
-		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive)
+		// 0️⃣ Load approved matches first
+		$approved_matches = mpro_get_approved_matches($this->client_id);
+		$approved_mentee_ids = array_map(function($m) { return (int)$m['mentee_id']; }, $approved_matches);
+		$approved_mentor_counts = []; // Track how many approved matches each mentor has
+
+		foreach ($approved_matches as $match) {
+			$mentor_id = (int)$match['mentor_id'];
+			if (!isset($approved_mentor_counts[$mentor_id])) {
+				$approved_mentor_counts[$mentor_id] = 0;
+			}
+			$approved_mentor_counts[$mentor_id]++;
+		}
+
+		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive and approved)
 		$mentees = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -98,6 +111,10 @@ class Leap4Ed_Matching extends Matching_Base {
 				AND NOT EXISTS (
 					SELECT 1 FROM {$wpdb->postmeta} s
 					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} am
+					WHERE am.post_id = p.ID AND am.meta_key = 'mpro_approved_mentor_id'
 				)
 			", MPRO_ROLE_MENTEE, $this->client_id)
 		);
@@ -220,11 +237,14 @@ class Leap4Ed_Matching extends Matching_Base {
 					$mentor_caps[$mentor_id] = mpro_get_mentor_cap($mentor_id, $max_mentees_per_mentor);
 					//error_log('mentor cap set to ' . $mentor_caps[$mentor_id] . ' for ' . $mentor_name);
 				}
-				
+
+				// Account for approved matches when calculating current count
+				$approved_count = isset($approved_mentor_counts[$mentor_id]) ? (int)$approved_mentor_counts[$mentor_id] : 0;
 				$current = isset($mentor_match_count[$mentor_id]) ? (int)$mentor_match_count[$mentor_id] : 0;
-				
-				// ✅ Skip only if THIS mentor is full relative to their own cap
-				if ($current >= $mentor_caps[$mentor_id]) {
+				$total_current = $current + $approved_count;
+
+				// ✅ Skip only if THIS mentor is full relative to their own cap (including approved matches)
+				if ($total_current >= $mentor_caps[$mentor_id]) {
 					continue;
 				}
 				
@@ -610,9 +630,14 @@ class Leap4Ed_Matching extends Matching_Base {
 			$unmatched_mentor_ids
 		));
 		
+		// ===== Combine approved matches with new matches =====
+		$all_matches = array_merge($approved_matches, $matches);
+
 		// ===== Return =====
 		return [
-			'matches'                  => $matches,
+			'matches'                  => $all_matches,
+			'approved_matches'         => $approved_matches,
+			'suggested_matches'        => $matches,
 			'unmatched_mentees'        => $unmatched_mentees,
 			'unmatched_mentors'        => $unmatched_mentors,
 			'mentees_no_language_match'=> $mentees_no_language_match,

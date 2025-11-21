@@ -89,7 +89,20 @@ class Salem_Matching extends Matching_Base {
 	public function generate_matching_report(): array {
 		global $wpdb;
 
-		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive)
+		// 0️⃣ Load approved matches first
+		$approved_matches = mpro_get_approved_matches($this->client_id);
+		$approved_mentee_ids = array_map(function($m) { return (int)$m['mentee_id']; }, $approved_matches);
+		$approved_mentor_counts = []; // Track how many approved matches each mentor has
+
+		foreach ($approved_matches as $match) {
+			$mentor_id = (int)$match['mentor_id'];
+			if (!isset($approved_mentor_counts[$mentor_id])) {
+				$approved_mentor_counts[$mentor_id] = 0;
+			}
+			$approved_mentor_counts[$mentor_id]++;
+		}
+
+		// 1️⃣ Get all mentees for a specific assigned client (excluding inactive and approved)
 		$mentees = $wpdb->get_results(
 			$wpdb->prepare("
 				SELECT p.ID, p.post_title
@@ -100,6 +113,10 @@ class Salem_Matching extends Matching_Base {
 				AND NOT EXISTS (
 					SELECT 1 FROM {$wpdb->postmeta} s
 					WHERE s.post_id = p.ID AND s.meta_key = 'mpro_status' AND s.meta_value = 'inactive'
+				)
+				AND NOT EXISTS (
+					SELECT 1 FROM {$wpdb->postmeta} am
+					WHERE am.post_id = p.ID AND am.meta_key = 'mpro_approved_mentor_id'
 				)
 			", MPRO_ROLE_MENTEE, $this->client_id)
 		);
@@ -165,9 +182,14 @@ class Salem_Matching extends Matching_Base {
 			foreach ($mentors as $mentor) {
 				$mentor_id = $mentor->ID;
 				$mentor_name = $mentor->post_title;
-				
-				// ✅ Skip mentors who already have full mentees assigned
-				if (isset($mentor_match_count[$mentor_name]) && $mentor_match_count[$mentor_name] >= $max_mentees_per_mentor) {
+
+				// Account for approved matches when calculating current count
+				$approved_count = isset($approved_mentor_counts[$mentor_id]) ? (int)$approved_mentor_counts[$mentor_id] : 0;
+				$current = isset($mentor_match_count[$mentor_name]) ? (int)$mentor_match_count[$mentor_name] : 0;
+				$total_current = $current + $approved_count;
+
+				// ✅ Skip mentors who already have full mentees assigned (including approved matches)
+				if ($total_current >= $max_mentees_per_mentor) {
 					continue; // Move to the next mentor
 				}
 
@@ -432,10 +454,15 @@ class Salem_Matching extends Matching_Base {
 		
 		// ✅ Get fresh unmatched lists
 		$unmatched_mentees = array_diff($all_mentee_names, array_keys($assigned_mentees));
-		$unmatched_mentors = array_diff($all_mentor_names, array_keys($mentor_match_count));		
+		$unmatched_mentors = array_diff($all_mentor_names, array_keys($mentor_match_count));
+
+		// ===== Combine approved matches with new matches =====
+		$all_matches = array_merge($approved_matches, $matches);
 
 		return [
-			'matches' => $matches,
+			'matches' => $all_matches,
+			'approved_matches' => $approved_matches,
+			'suggested_matches' => $matches,
 			'unmatched_mentees' => array_values($unmatched_mentees),
 			'unmatched_mentors' => array_values($unmatched_mentors),
 			'mentees_no_language_match' => $mentees_no_language_match,
